@@ -24,7 +24,6 @@
     "lint": "eslint libs/",
     "lint:fix": "eslint libs/ --fix",
     "doc": "typedoc --out docs libs/ && touch docs/.nojekyll",
-    "prepublishOnly": "npm run tsc && npm run test && npm run build",
     "release": "np",
     "postversion": "git push origin $(git describe --abbrev=0 --tags)",
     "prepare": "husky"
