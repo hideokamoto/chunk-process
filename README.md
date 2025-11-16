@@ -4,6 +4,34 @@ Simply async task runnner as sequential
 ## API Docs
 https://hideokamoto.github.io/sequential-promise/
 
+## API Overview
+
+This package exports the following functions:
+
+### `sequentialPromise<T, R>(targets: T[], callback: (prop: T) => Promise<R>): Promise<R[]>`
+Executes async functions sequentially for each element in the array.
+
+- **Type Parameters:**
+  - `T`: Type of elements in the input array
+  - `R`: Type of the result returned by the callback function
+
+### `sequentialPromiseWithChunk<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: {chunkSize?: number}): Promise<Array<Array<R>>>`
+Executes async functions in chunks, running items within each chunk in parallel, but processing chunks sequentially.
+
+- **Type Parameters:**
+  - `T`: Type of elements in the input array
+  - `R`: Type of the result returned by the callback function
+- **Options:**
+  - `chunkSize`: Number of items to process in parallel within each chunk (default: 1)
+
+### `arrayChunk<T>(inputArray: T[], perChunk?: number): Array<Array<T>>`
+Utility function to split an array into chunks of a specified size.
+
+- **Type Parameters:**
+  - `T`: Type of elements in the input array
+- **Parameters:**
+  - `perChunk`: Size of each chunk (default: 1)
+
 ## Before the package (Async style)
 We have to run the task as asynchronous
 
@@ -133,6 +161,49 @@ This is the result.
 
  [ '1 + 2 = 3', '2 + 2 = 4', '3 + 2 = 5', '4 + 2 = 6', '5 + 2 = 7' ]
 ```
+
+## Advanced Usage
+
+### Using `sequentialPromiseWithChunk` for Batch Processing
+
+When you need to process items in batches (running multiple items in parallel within each batch, but processing batches sequentially), use `sequentialPromiseWithChunk`:
+
+```typescript
+import { sequentialPromiseWithChunk } from '@hideokamoto/sequential-promise'
+
+// Process 10 items in chunks of 3
+// Items 1-3 run in parallel, then 4-6, then 7-9, then 10
+const result = await sequentialPromiseWithChunk<number, number>(
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  async (num) => {
+    console.log(`Processing: ${num}`)
+    await someAsyncOperation(num)
+    return num * 2
+  },
+  { chunkSize: 3 }
+)
+
+console.log(result)
+// Output: [[2, 4, 6], [8, 10, 12], [14, 16, 18], [20]]
+```
+
+**Note:** The return type is `Array<Array<R>>` - results are grouped by chunks.
+
+### Using `arrayChunk` Utility
+
+You can also use the `arrayChunk` function independently to split arrays:
+
+```typescript
+import { arrayChunk } from '@hideokamoto/sequential-promise'
+
+const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const chunks = arrayChunk(items, 3)
+
+console.log(chunks)
+// Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
+```
+
+This is useful when you need to prepare chunked data for other operations.
 
 ## contribution
 
