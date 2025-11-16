@@ -41,5 +41,5 @@
     "noEmitHelpers": true
   },
   "include": ["libs/**/*"],
-  "exclude": ["node_modules", "dist", "docs", "__tests__", "examples"]
+  "exclude": ["node_modules", "dist", "docs", "__tests__", "examples", "investigation"]
 }

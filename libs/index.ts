@@ -42,10 +42,6 @@ chunkSize?: number
   return results
 }
 
-// Deprecated: Use batchProcess instead
-/** @deprecated Use batchProcess instead */
-export const sequentialPromiseWithChunk = batchProcess
-
 /**
  * Utility function to split an array into chunks of a specified size.
  *
@@ -56,6 +52,7 @@ export const sequentialPromiseWithChunk = batchProcess
  * // Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const arrayChunk = <T = any>([...inputArray]: T[], perChunk = 1) => {
   return inputArray.reduce<Array<Array<T>>>((resultArray, item, index) => {
     const chunkIndex = Math.floor(index/perChunk)

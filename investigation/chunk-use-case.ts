@@ -5,7 +5,7 @@
  * so the library provides value for chunk-based parallel processing"
  */
 
-import { sequentialPromiseWithChunk } from '../libs/index'
+import { batchProcess } from '../libs/index'
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -21,10 +21,10 @@ const items = Array.from({ length: 100 }, (_, i) => i + 1)
 // Method 1: Using the library
 // ====================
 async function usingLibrary() {
-  console.log('\n=== Using sequentialPromiseWithChunk ===')
+  console.log('\n=== Using batchProcess ===')
   const start = Date.now()
 
-  const results = await sequentialPromiseWithChunk(
+  const results = await batchProcess(
     items,
     async (item) => await processItem(item),
     { chunkSize: 5 }
@@ -134,9 +134,9 @@ function printCodeComparison() {
 │ 1. Using Library (needs npm install)                                │
 └─────────────────────────────────────────────────────────────────────┘
 
-import { sequentialPromiseWithChunk } from '@hideokamoto/sequential-promise'
+import { batchProcess } from '@hideokamoto/sequential-promise'
 
-const results = await sequentialPromiseWithChunk(
+const results = await batchProcess(
   items,
   async (item) => await processItem(item),
   { chunkSize: 5 }
@@ -259,7 +259,7 @@ async function realWorldExample() {
 
   console.log('\n📦 Library approach:')
   console.log('─'.repeat(70))
-  console.log('const results = await sequentialPromiseWithChunk(')
+  console.log('const results = await batchProcess(')
   console.log('  userIds,')
   console.log('  async (id) => await fetchUserData(id),')
   console.log('  { chunkSize: 5 }')

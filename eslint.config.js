@@ -29,6 +29,6 @@ export default [
     }
   },
   {
-    ignores: ['dist', 'node_modules', 'docs', '__tests__', 'examples', '*.js', '*.cjs', '*.mjs', 'vite.config.ts']
+    ignores: ['dist', 'node_modules', 'docs', '__tests__', 'examples', 'investigation', '*.js', '*.cjs', '*.mjs', 'vite.config.ts']
   }
 ]
