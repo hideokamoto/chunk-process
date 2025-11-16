@@ -1,15 +1,15 @@
 import {
   arrayChunk,
-  sequentialPromiseWithChunk
+  batchProcess
 } from '../libs/index'
 
 const createArrayByLength = (length: number): Array<number> => {
   return [...Array(length)].fill(0).map((x,i) => x+i)
 }
 
-describe('sequentialPromiseWithChunk', () => {
+describe('batchProcess', () => {
   it('should return the result as chunked', async() => {
-    const result = await sequentialPromiseWithChunk<number, number>([1,2,3], async (number) => number + 1, {
+    const result = await batchProcess<number, number>([1,2,3], async (number) => number + 1, {
       chunkSize: 2
     })
     expect(result).toEqual([
@@ -24,7 +24,7 @@ describe('sequentialPromiseWithChunk', () => {
     [10, 11, 1],
   ])('given %i items and the chunk size is %p, should the array be %p', async(length, chunkSize, expectedArrayLength) => {
     const list = createArrayByLength(length)
-    const result = await sequentialPromiseWithChunk<number, number>(list, async (number) => number + 1, {
+    const result = await batchProcess<number, number>(list, async (number) => number + 1, {
       chunkSize
     })
     expect(result.length).toEqual(expectedArrayLength)

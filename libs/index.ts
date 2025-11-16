@@ -1,13 +1,13 @@
 /**
- * Execute async functions in chunks, running items within each chunk in parallel,
- * but processing chunks sequentially.
+ * Process items in batches, running items within each batch in parallel,
+ * but processing batches sequentially.
  *
  * This is useful for rate limiting API calls or controlling resource usage.
  *
  * @example
  * ```typescript
- * // Process 10 items in chunks of 3
- * const result = await sequentialPromiseWithChunk(
+ * // Process 10 items in batches of 3
+ * const result = await batchProcess(
  *   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
  *   async (num) => {
  *     await someAsyncOperation(num)
@@ -18,7 +18,7 @@
  * // Output: [[2, 4, 6], [8, 10, 12], [14, 16, 18], [20]]
  * ```
  *
- * @note For simple sequential processing without chunking, use native for...of:
+ * @note For simple sequential processing without batching, use native for...of:
  * ```typescript
  * const results = []
  * for (const item of items) {
@@ -28,7 +28,7 @@
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const sequentialPromiseWithChunk = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>, options?: {
+export const batchProcess = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>, options?: {
 chunkSize?: number
 }): Promise<Array<Array<R>>> => {
   const chunkSize = options ? options.chunkSize : 1
@@ -41,6 +41,10 @@ chunkSize?: number
   }
   return results
 }
+
+// Deprecated: Use batchProcess instead
+/** @deprecated Use batchProcess instead */
+export const sequentialPromiseWithChunk = batchProcess
 
 /**
  * Utility function to split an array into chunks of a specified size.
@@ -66,4 +70,4 @@ export const arrayChunk = <T = any>([...inputArray]: T[], perChunk = 1) => {
   }, [])
 }
 
-export default sequentialPromiseWithChunk
+export default batchProcess

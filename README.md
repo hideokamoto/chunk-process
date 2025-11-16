@@ -27,7 +27,7 @@ Prevent hitting rate limits when making multiple API calls to external services 
 
 ```typescript
 // Process 5 API calls at a time, then move to next batch
-await sequentialPromiseWithChunk(userIds, async (userId) => {
+await batchProcess(userIds, async (userId) => {
   return await fetchUserDataFromAPI(userId)
 }, { chunkSize: 5 })
 ```
@@ -37,7 +37,7 @@ Control memory and CPU usage by limiting concurrent operations.
 
 ```typescript
 // Process 10 items at a time to avoid memory issues
-await sequentialPromiseWithChunk(largeDataset, async (data) => {
+await batchProcess(largeDataset, async (data) => {
   return await processHeavyOperation(data)
 }, { chunkSize: 10 })
 ```
@@ -62,15 +62,15 @@ await sequentialPromiseWithChunk(largeDataset, async (data) => {
 
 This package exports the following functions:
 
-### `sequentialPromiseWithChunk<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: {chunkSize?: number}): Promise<Array<Array<R>>>`
-Executes async functions in chunks, running items within each chunk in parallel, but processing chunks sequentially.
+### `batchProcess<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: {chunkSize?: number}): Promise<Array<Array<R>>>`
+Process items in batches, running items within each batch in parallel, but processing batches sequentially.
 
 - **Type Parameters:**
   - `T`: Type of elements in the input array
   - `R`: Type of the result returned by the callback function
 - **Options:**
-  - `chunkSize`: Number of items to process in parallel within each chunk (default: 1)
-- **Returns:** Nested array of results, grouped by chunks
+  - `chunkSize`: Number of items to process in parallel within each batch (default: 1)
+- **Returns:** Nested array of results, grouped by batches
 
 ### `arrayChunk<T>(inputArray: T[], perChunk?: number): Array<Array<T>>`
 Utility function to split an array into chunks of a specified size.
@@ -81,148 +81,45 @@ Utility function to split an array into chunks of a specified size.
   - `perChunk`: Size of each chunk (default: 1)
 - **Returns:** Array of chunks
 
-## Before the package (Async style)
-We have to run the task as asynchronous
+## Quick Start
 
+### TypeScript
 ```typescript
-import * as moment from 'moment'
+import batchProcess from '@hideokamoto/sequential-promise'
 
-const dummy = async () => {
-  return new Promise(resolve => setTimeout(resolve, 1000))
-}
+// Process 100 API calls, 5 at a time
+const userIds = Array.from({ length: 100 }, (_, i) => i + 1)
 
-const asyncFunc = async () => {
+const results = await batchProcess(userIds, async (userId) => {
+  const data = await fetchUserFromAPI(userId)
+  return data
+}, { chunkSize: 5 })
 
-  const arr = [1,2,3,4,5]
-  const result = await Promise.all(arr.map(async i => {
-    const start = moment()
-    console.log(`Number: ${i}`)
-    console.log(`Start: ${start.toISOString()}`)
-    await dummy()
-    console.log(`End ${moment().toISOString()}`)
-    console.log(`${moment().diff(start, 'seconds')} sec`)
-    console.log(' ')
-    return i + 1
-  }))
-  return result
-})
-
-asyncFunc().then(result => console.log(result))
-```
-
-The function will run async.
-
-```bash
-Number: 1
-Start: 2019-08-30T07:52:43.862Z
-Number: 2
-Start: 2019-08-30T07:52:43.862Z
-Number: 3
-Start: 2019-08-30T07:52:43.863Z
-Number: 4
-Start: 2019-08-30T07:52:43.863Z
-Number: 5
-Start: 2019-08-30T07:52:43.863Z
-End 2019-08-30T07:52:44.866Z
-1 sec
- 
-End 2019-08-30T07:52:44.866Z
-1 sec
- 
-End 2019-08-30T07:52:44.867Z
-1 sec
- 
-End 2019-08-30T07:52:44.867Z
-1 sec
- 
-End 2019-08-30T07:52:44.867Z
-1 sec
- 
-[ 2, 3, 4, 5, 6 ]
-```
-
-## Use the package
-To use the package, we can run sequential
-
-### Typescript
-```typescript
-import * as moment from 'moment'
-import sequentialPromise from '@hideokamoto/sequential-promise'
-
-sequentialPromise<number, string>([1,2,3,4,5], async (i) => {
-  const start = moment()
-  console.log(`Number: ${i}`)
-  console.log(`Start: ${start.toISOString()}`)
-  await dummy()
-  console.log(`End ${moment().toISOString()}`)
-  console.log(`${moment().diff(start, 'seconds')} sec`)
-  console.log(' ')
-  return `${i} + 2 = ${i + 2}`
-}).then(r => console.log(r))
+console.log(results) // [[user1-5], [user6-10], ...]
 ```
 
 ### JavaScript
 ```javascript
-const moment = require('moment')
-const sequentialPromise = require('@hideokamoto/sequential-promise')
+const batchProcess = require('@hideokamoto/sequential-promise')
 
-sequentialPromise([1,2,3,4,5], async (i) => {
-  const start = moment()
-  console.log(`Number: ${i}`)
-  console.log(`Start: ${start.toISOString()}`)
-  await dummy()
-  console.log(`End ${moment().toISOString()}`)
-  console.log(`${moment().diff(start, 'seconds')} sec`)
-  console.log(' ')
-  return `${i} + 2 = ${i + 2}`
-}).then(r => console.log(r))
-```
-
-### Result
-
-This is the result.
-
-```bash
- Number: 1
- Start: 2019-08-30T07:35:00.175Z
- End 2019-08-30T07:35:01.182Z
- 1 sec
-
- Number: 2
- Start: 2019-08-30T07:35:01.184Z
- End 2019-08-30T07:35:02.188Z
- 1 sec
-
- Number: 3
- Start: 2019-08-30T07:35:02.188Z
- End 2019-08-30T07:35:03.194Z
- 1 sec
-
- Number: 4
- Start: 2019-08-30T07:35:03.194Z
- End 2019-08-30T07:35:04.200Z
- 1 sec
-
- Number: 5
- Start: 2019-08-30T07:35:04.200Z
- End 2019-08-30T07:35:05.206Z
- 1 sec
-
- [ '1 + 2 = 3', '2 + 2 = 4', '3 + 2 = 5', '4 + 2 = 6', '5 + 2 = 7' ]
+// Process items in batches
+const results = await batchProcess(items, async (item) => {
+  return await processItem(item)
+}, { chunkSize: 10 })
 ```
 
 ## Advanced Usage
 
-### Using `sequentialPromiseWithChunk` for Batch Processing
+### Using `batchProcess` for Batch Processing
 
-When you need to process items in batches (running multiple items in parallel within each batch, but processing batches sequentially), use `sequentialPromiseWithChunk`:
+When you need to process items in batches (running multiple items in parallel within each batch, but processing batches sequentially), use `batchProcess`:
 
 ```typescript
-import { sequentialPromiseWithChunk } from '@hideokamoto/sequential-promise'
+import { batchProcess } from '@hideokamoto/sequential-promise'
 
-// Process 10 items in chunks of 3
+// Process 10 items in batches of 3
 // Items 1-3 run in parallel, then 4-6, then 7-9, then 10
-const result = await sequentialPromiseWithChunk<number, number>(
+const result = await batchProcess<number, number>(
   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   async (num) => {
     console.log(`Processing: ${num}`)
@@ -236,7 +133,7 @@ console.log(result)
 // Output: [[2, 4, 6], [8, 10, 12], [14, 16, 18], [20]]
 ```
 
-**Note:** The return type is `Array<Array<R>>` - results are grouped by chunks.
+**Note:** The return type is `Array<Array<R>>` - results are grouped by batches.
 
 ### Using `arrayChunk` Utility
 
