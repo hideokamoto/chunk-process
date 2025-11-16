@@ -1,6 +1,11 @@
 # Sequential Promise
 Chunked parallel async task runner for rate limiting and resource control
 
+> [!WARNING]
+> **Breaking Changes in Major Update**
+>
+> This library has undergone significant implementation changes. If you're upgrading from v1.1.1 or v1.1.2, the `arrayChunk` function has been removed. Use `arrayBatch` instead. See the [Breaking Changes](#breaking-changes-in-major-update) section below for migration details.
+
 ## API Docs
 https://hideokamoto.github.io/sequential-promise/
 
@@ -150,6 +155,37 @@ console.log(batches)
 ```
 
 This is useful when you need to prepare chunked data for other operations.
+
+## Breaking Changes in Major Update
+
+This library has undergone significant implementation changes in the major version update. If you're upgrading from v1.1.1 or v1.1.2, please review the following breaking changes:
+
+### Removed Functions
+
+- **`arrayChunk`** has been removed. Use `arrayBatch` instead.
+  - **Migration:** Replace `arrayChunk(array, size)` with `arrayBatch(array, size)`
+  - The function signature and behavior are identical, only the name has changed.
+
+### API Changes
+
+- The core functionality remains the same, but internal implementation has been refactored for better performance and maintainability.
+- All existing `batchProcess` and `arrayBatch` APIs remain backward compatible.
+
+### Migration Guide
+
+If you're using the deprecated `arrayChunk` function:
+
+```typescript
+// Before (v1.1.x)
+import { arrayChunk } from '@hideokamoto/sequential-promise'
+const batches = arrayChunk(items, 3)
+
+// After (v2.0.0+)
+import { arrayBatch } from '@hideokamoto/sequential-promise'
+const batches = arrayBatch(items, 3)
+```
+
+For `batchProcess`, no changes are required - it continues to work as before.
 
 ## contribution
 
