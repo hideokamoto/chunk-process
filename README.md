@@ -4,6 +4,54 @@ Simply async task runnner as sequential
 ## API Docs
 https://hideokamoto.github.io/sequential-promise/
 
+## Why Sequential Promise?
+
+When using `Promise.all()`, all async tasks execute in parallel, which can cause issues in certain scenarios. This library provides a simple way to execute async tasks sequentially, giving you better control over execution flow and resource usage.
+
+## Use Cases
+
+### 1. API Rate Limiting
+Prevent hitting rate limits when making multiple API calls to external services.
+
+```typescript
+// Avoid overwhelming APIs with parallel requests
+await sequentialPromise(userIds, async (userId) => {
+  return await fetchUserDataFromAPI(userId)
+})
+```
+
+### 2. Execution Order Guarantee
+Ensure operations execute in a specific order, crucial for database updates or dependent operations.
+
+### 3. Resource Management
+Control memory and CPU usage by preventing too many parallel operations.
+
+### 4. Controlled Parallel Execution
+Use `sequentialPromiseWithChunk` to batch operations - execute N items in parallel, then move to the next batch.
+
+```typescript
+// Process 5 items at a time, sequentially batch by batch
+await sequentialPromiseWithChunk(items, async (item) => {
+  return await processItem(item)
+}, { chunkSize: 5 })
+```
+
+## Benefits
+
+- **Simple API**: Drop-in replacement for `Promise.all()` with sequential execution
+- **Type-Safe**: Full TypeScript support with generics
+- **Lightweight**: Zero dependencies, minimal footprint
+- **Flexible**: Choose between fully sequential or chunked parallel execution
+- **Predictable**: Guaranteed execution order and result order
+
+## Common Scenarios
+
+- External payment API calls (Stripe, PayPal, etc.)
+- Bulk file uploads to cloud storage
+- Database migrations with dependencies
+- Web scraping with request throttling
+- Resource-constrained environments (AWS Lambda, edge functions)
+
 ## API Overview
 
 This package exports the following functions:
