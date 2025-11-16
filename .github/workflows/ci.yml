@@ -5,31 +5,33 @@ on:
     branches:
       - master
       - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
-      - '*.png'
-      - '*.jpg'
-      - '*.jpeg'
-      - '*.gif'
-      - '*.svg'
-      - 'renovate.json'
-      - '.travis.yml'
+    paths:
+      - 'libs/**'
+      - '__tests__/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
+      - 'eslint.config.js'
+      - '.eslintrc.yml'
+      - '.eslintignore'
+      - '.github/workflows/**'
+      - '.husky/**'
+      - '.lintstagedrc.json'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
-      - '*.png'
-      - '*.jpg'
-      - '*.jpeg'
-      - '*.gif'
-      - '*.svg'
-      - 'renovate.json'
-      - '.travis.yml'
+    paths:
+      - 'libs/**'
+      - '__tests__/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
+      - 'eslint.config.js'
+      - '.eslintrc.yml'
+      - '.eslintignore'
+      - '.github/workflows/**'
+      - '.husky/**'
+      - '.lintstagedrc.json'
 
 jobs:
   lint:
