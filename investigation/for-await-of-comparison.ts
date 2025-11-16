@@ -1,8 +1,8 @@
 /**
- * Comparison: batchProcess vs for...of
+ * Comparison: batchProcess vs native batch processing
  *
- * This file investigates whether the library is really necessary
- * or if native for...of is sufficient.
+ * This file compares the library's batchProcess function against
+ * native JavaScript approaches for batch processing.
  */
 
 import { batchProcess } from '../libs/index'
@@ -16,11 +16,11 @@ async function processItem(item: number): Promise<string> {
 }
 
 // ====================
-// Test 1: Chunk processing comparison
+// Batch processing comparison
 // ====================
 
-async function usingLibraryWithChunk() {
-  console.log('\n=== Using batchProcess ===')
+async function usingBatchProcess() {
+  console.log('\n=== Using batchProcess (library) ===')
   const start = Date.now()
 
   const results = await batchProcess(
@@ -35,8 +35,8 @@ async function usingLibraryWithChunk() {
   return { results, elapsed }
 }
 
-async function usingForOfWithChunk() {
-  console.log('\n=== Using for...of with chunking ===')
+async function usingNativeBatching() {
+  console.log('\n=== Using native batch processing ===')
   const start = Date.now()
 
   const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -44,11 +44,11 @@ async function usingForOfWithChunk() {
   const results: string[][] = []
 
   for (let i = 0; i < items.length; i += batchSize) {
-    const chunk = items.slice(i, i + batchSize)
-    const chunkResults = await Promise.all(
-      chunk.map(item => processItem(item))
+    const batch = items.slice(i, i + batchSize)
+    const batchResults = await Promise.all(
+      batch.map(item => processItem(item))
     )
-    results.push(chunkResults)
+    results.push(batchResults)
   }
 
   const elapsed = Date.now() - start
@@ -89,11 +89,11 @@ Value depends on how often you need chunk processing.
 // ====================
 
 async function main() {
-  console.log('Starting comparison tests...\n')
+  console.log('Starting batch processing comparison...\n')
 
-  // Chunk processing comparison
-  await usingLibraryWithChunk()
-  await usingForOfWithChunk()
+  // Batch processing comparison
+  await usingBatchProcess()
+  await usingNativeBatching()
 
   // Print analysis
   printAnalysis()

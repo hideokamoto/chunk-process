@@ -42,4 +42,85 @@ describe('arrayBatch', () => {
     const batchedArray = arrayBatch(list, batchSize)
     expect(batchedArray.length).toEqual(expectedArrayLength)
   })
+
+  it('should handle empty array', () => {
+    const result = arrayBatch([], 3)
+    expect(result).toEqual([])
+  })
+
+  it('should handle single item with batchSize 1', () => {
+    const result = arrayBatch([1], 1)
+    expect(result).toEqual([[1]])
+  })
+
+  it('should handle single item with batchSize > 1', () => {
+    const result = arrayBatch([1], 5)
+    expect(result).toEqual([[1]])
+  })
+
+  it('should handle batchSize larger than array length', () => {
+    const result = arrayBatch([1, 2, 3], 10)
+    expect(result).toEqual([[1, 2, 3]])
+  })
+})
+
+describe('batchProcess - edge cases', () => {
+  it('should handle empty array', async () => {
+    const result = await batchProcess<number, number>([], async (num) => num * 2)
+    expect(result).toEqual([])
+  })
+
+  it('should handle single item with batchSize 1', async () => {
+    const result = await batchProcess<number, number>([5], async (num) => num * 2, {
+      batchSize: 1
+    })
+    expect(result).toEqual([[10]])
+  })
+
+  it('should handle single item with batchSize > 1', async () => {
+    const result = await batchProcess<number, number>([5], async (num) => num * 2, {
+      batchSize: 10
+    })
+    expect(result).toEqual([[10]])
+  })
+
+  it('should handle batchSize larger than input length', async () => {
+    const result = await batchProcess<number, number>([1, 2, 3], async (num) => num * 2, {
+      batchSize: 10
+    })
+    expect(result).toEqual([[2, 4, 6]])
+  })
+
+  it('should propagate errors from callback', async () => {
+    await expect(
+      batchProcess<number, number>([1, 2, 3], async (num) => {
+        if (num === 2) {
+          throw new Error('Test error')
+        }
+        return num * 2
+      })
+    ).rejects.toThrow('Test error')
+  })
+
+  it('should propagate errors from async callback', async () => {
+    await expect(
+      batchProcess<number, number>([1, 2, 3, 4], async (num) => {
+        if (num === 3) {
+          throw new Error('Async error at item 3')
+        }
+        return num * 2
+      }, { batchSize: 2 })
+    ).rejects.toThrow('Async error at item 3')
+  })
+
+  it('should handle Promise.reject in callback', async () => {
+    await expect(
+      batchProcess<number, number>([1, 2, 3], async (num) => {
+        if (num === 2) {
+          return Promise.reject(new Error('Rejected promise'))
+        }
+        return num * 2
+      })
+    ).rejects.toThrow('Rejected promise')
+  })
 })
