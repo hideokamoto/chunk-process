@@ -1,6 +1,6 @@
 {
   "name": "@hideokamoto/sequential-promise",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "simply async function runner as a sequential",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
