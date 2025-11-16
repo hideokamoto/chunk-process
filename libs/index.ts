@@ -1,92 +1,77 @@
 /**
- * Execute async function as sequential
+ * Process items in batches, running items within each batch in parallel,
+ * but processing batches sequentially.
+ *
+ * This is useful for rate limiting API calls or controlling resource usage.
+ *
  * @example
  * ```typescript
- * sequentialPromise<number, string>([1,2,3,4,5], async (i) => {
- *   const start = moment()
- *   console.log(`Number: ${i}`)
- *   console.log(`Start: ${start.toISOString()}`)
- *   await dummy()
- *   console.log(`End ${moment().toISOString()}`)
- *   console.log(`${moment().diff(start, 'seconds')} sec`)
- *   console.log(' ')
- *   return `${i} + 2 = ${i + 2}`
- * }).then(r => console.log(r))
- * Number: 1
- * Start: 2019-08-30T07:35:00.175Z
- * End 2019-08-30T07:35:01.182Z
- * 1 sec
+ * // Process 10 items in batches of 3
+ * const result = await batchProcess(
+ *   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+ *   async (num) => {
+ *     await someAsyncOperation(num)
+ *     return num * 2
+ *   },
+ *   { batchSize: 3 }
+ * )
+ * // Output: [[2, 4, 6], [8, 10, 12], [14, 16, 18], [20]]
+ * ```
  *
- * Number: 2
- * Start: 2019-08-30T07:35:01.184Z
- * End 2019-08-30T07:35:02.188Z
- * 1 sec
- *
- * Number: 3
- * Start: 2019-08-30T07:35:02.188Z
- * End 2019-08-30T07:35:03.194Z
- * 1 sec
- *
- * Number: 4
- * Start: 2019-08-30T07:35:03.194Z
- * End 2019-08-30T07:35:04.200Z
- * 1 sec
- *
- * Number: 5
- * Start: 2019-08-30T07:35:04.200Z
- * End 2019-08-30T07:35:05.206Z
- * 1 sec
- *
- * [ '1 + 2 = 3', '2 + 2 = 4', '3 + 2 = 5', '4 + 2 = 6', '5 + 2 = 7' ]
+ * @note For simple sequential processing without batching, use native for...of:
+ * ```typescript
+ * const results = []
+ * for (const item of items) {
+ *   const result = await processItem(item)
+ *   results.push(result)
+ * }
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const sequentialPromise = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>): Promise<R[]> => {
-
-  const results: R[] = []
-  let p: Promise<void> = Promise.resolve()
-  targets.forEach((target): void => {
-    p = p.then(async (): Promise<void> => {
-      const result = await callback(target)
-      results.push(result)
-    })
-  })
-  await p
-  return results
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const sequentialPromiseWithChunk = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>, options?: {
-chunkSize?: number
+export const batchProcess = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>, options?: {
+batchSize?: number
 }): Promise<Array<Array<R>>> => {
-  const chunkSize = options ? options.chunkSize : 1
-  const chunkedItems = arrayChunk<T>(targets, chunkSize)
+  const batchSize = options?.batchSize ?? 1
+  const batches = arrayBatch<T>(targets, batchSize)
 
-  const results = await sequentialPromise<Array<T>, Array<R>>(chunkedItems, async (items) => {
-    const chunkResults = await Promise.all(items.map(async (item) => callback(item)))
-    return chunkResults
-  })
+  const results: Array<Array<R>> = []
+  for (const batch of batches) {
+    const batchResults = await Promise.all(batch.map(callback))
+    results.push(batchResults)
+  }
   return results
 }
 
 /**
- * 
- * @param param0 chunk the array
- * @param perChunk 
- * @returns 
+ * Utility function to split an array into batches of a specified size.
+ *
+ * @example
+ * ```typescript
+ * const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+ * const batches = arrayBatch(items, 3)
+ * // Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
+ * ```
+ *
+ * @throws {Error} If batchSize is not a positive integer
  */
-export const arrayChunk = <T = any>([...inputArray]: T[], perChunk = 1) => {
-  return inputArray.reduce<Array<Array<T>>>((resultArray, item, index) => { 
-    const chunkIndex = Math.floor(index/perChunk)
-  
-    if(!resultArray[chunkIndex]) {
-      resultArray[chunkIndex] = [] // start a new chunk
-    }
-  
-    resultArray[chunkIndex].push(item)
-  
-    return resultArray
-  }, [])
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const arrayBatch = <T = any>(inputArray: T[], batchSize = 1): T[][] => {
+  if (!Number.isInteger(batchSize) || batchSize <= 0) {
+    throw new Error('batchSize must be a positive integer')
+  }
+
+  const result: T[][] = []
+  for (let i = 0; i < inputArray.length; i += batchSize) {
+    result.push(inputArray.slice(i, i + batchSize))
+  }
+  return result
 }
 
-export default sequentialPromise
+// Deprecated: Use arrayBatch instead
+/** @deprecated Use arrayBatch instead. Will be removed in next major version. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const arrayChunk = <T = any>(inputArray: T[], perChunk = 1): T[][] => {
+  return arrayBatch(inputArray, perChunk)
+}
+
+export default batchProcess
