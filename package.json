@@ -2,16 +2,30 @@
   "name": "@hideokamoto/sequential-promise",
   "version": "1.1.1",
   "description": "simply async function runner as a sequential",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "rollup -c",
-    "tsc": "tsc",
-    "test": "jest",
-    "lint": "eslint 'libs/*.ts'",
+    "build": "vite build",
+    "tsc": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint libs/",
+    "lint:fix": "eslint libs/ --fix",
     "doc": "typedoc --out docs libs/ && touch docs/.nojekyll",
     "postversion": "git push origin $(git describe --abbrev=0 --tags)",
-    "test:watch": "jest --watch",
-    "test:dev": "jest --watch --silent=false --verbose false --coverage"
+    "prepare": "husky"
   },
   "keywords": [
     "stripe"
@@ -25,57 +39,22 @@
   },
   "author": "Hidetaka Okamoto <info@wp-kyoto.net> (https://wp-kyoto.net)",
   "license": "MIT",
-  "jest": {
-    "moduleFileExtensions": [
-      "ts",
-      "js"
-    ],
-    "transform": {
-      "^.+\\.(ts|tsx)$": "ts-jest"
-    },
-    "globals": {
-      "ts-jest": {
-        "tsConfig": "tsconfig.json"
-      }
-    },
-    "testMatch": [
-      "**/__tests__/*.+(ts|js)"
-    ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "git add"
-    ]
-  },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
-    "@types/jest": "25.2.3",
-    "@types/node": "12.12.43",
-    "@typescript-eslint/eslint-plugin": "2.34.0",
-    "@typescript-eslint/parser": "2.34.0",
-    "@typescript-eslint/typescript-estree": "2.34.0",
-    "eslint": "7.1.0",
-    "eslint-config-standard": "14.1.1",
-    "eslint-plugin-import": "2.20.2",
-    "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-standard": "4.0.1",
-    "husky": "4.2.5",
-    "jest": "24.9.0",
-    "lint-staged": "10.2.9",
-    "rollup": "1.32.1",
-    "rollup-plugin-typescript2": "0.27.1",
-    "ts-jest": "24.3.0",
-    "tslib": "1.13.0",
-    "typedoc": "0.17.7",
-    "typescript": "3.9.3"
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.17.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "tslib": "^2.8.1",
+    "typedoc": "^0.27.5",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^2.1.8"
   }
 }
