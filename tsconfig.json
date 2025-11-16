@@ -1,37 +1,45 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "esnext",
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020"],
     "declaration": true,
-    "outDir": "./dist/",
-    "rootDir": "./libs/",
-    "lib": [ "esnext"],
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./libs",
+
+    /* Strict Type Checking */
     "strict": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-    "alwaysStrict": true,
     "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
     "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    /* Additional Checks */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "strictNullChecks": true,
-    "pretty": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noEmitHelpers": true,
+    "noUncheckedIndexedAccess": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    /* Module Resolution */
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Advanced */
+    "skipLibCheck": true,
     "importHelpers": true,
-    "moduleResolution": "node",
-    "esModuleInterop": true
+    "noEmitHelpers": true
   },
-  "include": [
-    "libs/"
-  ],
-  "exclude": [
-    "__tests__",
-    "docs",
-    "node_modules",
-    "./dist",
-    "./index.js",
-    "examples/"
-  ]
+  "include": ["libs/**/*"],
+  "exclude": ["node_modules", "dist", "docs", "__tests__", "examples"]
 }
