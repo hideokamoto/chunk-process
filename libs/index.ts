@@ -36,7 +36,7 @@ batchSize?: number
 
   const results: Array<Array<R>> = []
   for (const batch of batches) {
-    const batchResults = await Promise.all(batch.map(async (item) => callback(item)))
+    const batchResults = await Promise.all(batch.map(callback))
     results.push(batchResults)
   }
   return results
@@ -51,9 +51,15 @@ batchSize?: number
  * const batches = arrayBatch(items, 3)
  * // Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
  * ```
+ *
+ * @throws {Error} If batchSize is not a positive integer
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const arrayBatch = <T = any>(inputArray: T[], batchSize = 1): T[][] => {
+  if (!Number.isInteger(batchSize) || batchSize <= 0) {
+    throw new Error('batchSize must be a positive integer')
+  }
+
   const result: T[][] = []
   for (let i = 0; i < inputArray.length; i += batchSize) {
     result.push(inputArray.slice(i, i + batchSize))

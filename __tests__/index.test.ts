@@ -62,6 +62,22 @@ describe('arrayBatch', () => {
     const result = arrayBatch([1, 2, 3], 10)
     expect(result).toEqual([[1, 2, 3]])
   })
+
+  it('should throw error for batchSize of 0', () => {
+    expect(() => arrayBatch([1, 2, 3], 0)).toThrow('batchSize must be a positive integer')
+  })
+
+  it('should throw error for negative batchSize', () => {
+    expect(() => arrayBatch([1, 2, 3], -1)).toThrow('batchSize must be a positive integer')
+  })
+
+  it('should throw error for non-integer batchSize', () => {
+    expect(() => arrayBatch([1, 2, 3], 1.5)).toThrow('batchSize must be a positive integer')
+  })
+
+  it('should throw error for NaN batchSize', () => {
+    expect(() => arrayBatch([1, 2, 3], NaN)).toThrow('batchSize must be a positive integer')
+  })
 })
 
 describe('batchProcess - edge cases', () => {
@@ -122,5 +138,23 @@ describe('batchProcess - edge cases', () => {
         return num * 2
       })
     ).rejects.toThrow('Rejected promise')
+  })
+
+  it('should throw error for batchSize of 0', async () => {
+    await expect(
+      batchProcess<number, number>([1, 2, 3], async (num) => num * 2, { batchSize: 0 })
+    ).rejects.toThrow('batchSize must be a positive integer')
+  })
+
+  it('should throw error for negative batchSize', async () => {
+    await expect(
+      batchProcess<number, number>([1, 2, 3], async (num) => num * 2, { batchSize: -5 })
+    ).rejects.toThrow('batchSize must be a positive integer')
+  })
+
+  it('should throw error for non-integer batchSize', async () => {
+    await expect(
+      batchProcess<number, number>([1, 2, 3], async (num) => num * 2, { batchSize: 2.5 })
+    ).rejects.toThrow('batchSize must be a positive integer')
   })
 })
