@@ -26,7 +26,7 @@ async function usingLibraryWithChunk() {
   const results = await batchProcess(
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     async (i) => await processItem(i),
-    { chunkSize: 3 }
+    { batchSize: 3 }
   )
 
   const elapsed = Date.now() - start
@@ -40,11 +40,11 @@ async function usingForOfWithChunk() {
   const start = Date.now()
 
   const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  const chunkSize = 3
+  const batchSize = 3
   const results: string[][] = []
 
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize)
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize)
     const chunkResults = await Promise.all(
       chunk.map(item => processItem(item))
     )

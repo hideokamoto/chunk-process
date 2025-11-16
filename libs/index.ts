@@ -13,7 +13,7 @@
  *     await someAsyncOperation(num)
  *     return num * 2
  *   },
- *   { chunkSize: 3 }
+ *   { batchSize: 3 }
  * )
  * // Output: [[2, 4, 6], [8, 10, 12], [14, 16, 18], [20]]
  * ```
@@ -29,42 +29,43 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const batchProcess = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>, options?: {
-chunkSize?: number
+batchSize?: number
 }): Promise<Array<Array<R>>> => {
-  const chunkSize = options ? options.chunkSize : 1
-  const chunkedItems = arrayChunk<T>(targets, chunkSize)
+  const batchSize = options?.batchSize ?? 1
+  const batches = arrayBatch<T>(targets, batchSize)
 
   const results: Array<Array<R>> = []
-  for (const items of chunkedItems) {
-    const chunkResults = await Promise.all(items.map(async (item) => callback(item)))
-    results.push(chunkResults)
+  for (const batch of batches) {
+    const batchResults = await Promise.all(batch.map(async (item) => callback(item)))
+    results.push(batchResults)
   }
   return results
 }
 
 /**
- * Utility function to split an array into chunks of a specified size.
+ * Utility function to split an array into batches of a specified size.
  *
  * @example
  * ```typescript
  * const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
- * const chunks = arrayChunk(items, 3)
+ * const batches = arrayBatch(items, 3)
  * // Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const arrayChunk = <T = any>([...inputArray]: T[], perChunk = 1) => {
-  return inputArray.reduce<Array<Array<T>>>((resultArray, item, index) => {
-    const chunkIndex = Math.floor(index/perChunk)
+export const arrayBatch = <T = any>(inputArray: T[], batchSize = 1): T[][] => {
+  const result: T[][] = []
+  for (let i = 0; i < inputArray.length; i += batchSize) {
+    result.push(inputArray.slice(i, i + batchSize))
+  }
+  return result
+}
 
-    if(!resultArray[chunkIndex]) {
-      resultArray[chunkIndex] = [] // start a new chunk
-    }
-
-    resultArray[chunkIndex].push(item)
-
-    return resultArray
-  }, [])
+// Deprecated: Use arrayBatch instead
+/** @deprecated Use arrayBatch instead. Will be removed in next major version. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const arrayChunk = <T = any>(inputArray: T[], perChunk = 1): T[][] => {
+  return arrayBatch(inputArray, perChunk)
 }
 
 export default batchProcess

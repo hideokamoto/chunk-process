@@ -29,7 +29,7 @@ Prevent hitting rate limits when making multiple API calls to external services 
 // Process 5 API calls at a time, then move to next batch
 await batchProcess(userIds, async (userId) => {
   return await fetchUserDataFromAPI(userId)
-}, { chunkSize: 5 })
+}, { batchSize: 5 })
 ```
 
 ### 2. Resource Management
@@ -39,7 +39,7 @@ Control memory and CPU usage by limiting concurrent operations.
 // Process 10 items at a time to avoid memory issues
 await batchProcess(largeDataset, async (data) => {
   return await processHeavyOperation(data)
-}, { chunkSize: 10 })
+}, { batchSize: 10 })
 ```
 
 ## Benefits
@@ -62,24 +62,24 @@ await batchProcess(largeDataset, async (data) => {
 
 This package exports the following functions:
 
-### `batchProcess<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: {chunkSize?: number}): Promise<Array<Array<R>>>`
+### `batchProcess<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: {batchSize?: number}): Promise<Array<Array<R>>>`
 Process items in batches, running items within each batch in parallel, but processing batches sequentially.
 
 - **Type Parameters:**
   - `T`: Type of elements in the input array
   - `R`: Type of the result returned by the callback function
 - **Options:**
-  - `chunkSize`: Number of items to process in parallel within each batch (default: 1)
+  - `batchSize`: Number of items to process in parallel within each batch (default: 1)
 - **Returns:** Nested array of results, grouped by batches
 
-### `arrayChunk<T>(inputArray: T[], perChunk?: number): Array<Array<T>>`
-Utility function to split an array into chunks of a specified size.
+### `arrayBatch<T>(inputArray: T[], batchSize?: number): T[][]`
+Utility function to split an array into batches of a specified size.
 
 - **Type Parameters:**
   - `T`: Type of elements in the input array
 - **Parameters:**
-  - `perChunk`: Size of each chunk (default: 1)
-- **Returns:** Array of chunks
+  - `batchSize`: Size of each batch (default: 1)
+- **Returns:** Array of batches
 
 ## Quick Start
 
@@ -93,7 +93,7 @@ const userIds = Array.from({ length: 100 }, (_, i) => i + 1)
 const results = await batchProcess(userIds, async (userId) => {
   const data = await fetchUserFromAPI(userId)
   return data
-}, { chunkSize: 5 })
+}, { batchSize: 5 })
 
 console.log(results) // [[user1-5], [user6-10], ...]
 ```
@@ -105,7 +105,7 @@ const batchProcess = require('@hideokamoto/sequential-promise')
 // Process items in batches
 const results = await batchProcess(items, async (item) => {
   return await processItem(item)
-}, { chunkSize: 10 })
+}, { batchSize: 10 })
 ```
 
 ## Advanced Usage
@@ -126,7 +126,7 @@ const result = await batchProcess<number, number>(
     await someAsyncOperation(num)
     return num * 2
   },
-  { chunkSize: 3 }
+  { batchSize: 3 }
 )
 
 console.log(result)
@@ -135,17 +135,17 @@ console.log(result)
 
 **Note:** The return type is `Array<Array<R>>` - results are grouped by batches.
 
-### Using `arrayChunk` Utility
+### Using `arrayBatch` Utility
 
-You can also use the `arrayChunk` function independently to split arrays:
+You can also use the `arrayBatch` function independently to split arrays:
 
 ```typescript
-import { arrayChunk } from '@hideokamoto/sequential-promise'
+import { arrayBatch } from '@hideokamoto/sequential-promise'
 
 const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-const chunks = arrayChunk(items, 3)
+const batches = arrayBatch(items, 3)
 
-console.log(chunks)
+console.log(batches)
 // Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
 ```
 

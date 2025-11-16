@@ -27,7 +27,7 @@ async function usingLibrary() {
   const results = await batchProcess(
     items,
     async (item) => await processItem(item),
-    { chunkSize: 5 }
+    { batchSize: 5 }
   )
 
   const elapsed = Date.now() - start
@@ -44,11 +44,11 @@ async function manualChunkingVerbose() {
   console.log('\n=== Manual chunking (verbose) ===')
   const start = Date.now()
 
-  const chunkSize = 5
+  const batchSize = 5
   const results: string[][] = []
 
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize)
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize)
     const chunkResults = await Promise.all(
       chunk.map(item => processItem(item))
     )
@@ -67,12 +67,12 @@ async function manualChunkingVerbose() {
 // ====================
 async function processInChunks<T, R>(
   items: T[],
-  chunkSize: number,
+  batchSize: number,
   processor: (item: T) => Promise<R>
 ): Promise<R[][]> {
   const results: R[][] = []
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize)
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize)
     const chunkResults = await Promise.all(chunk.map(processor))
     results.push(chunkResults)
   }
@@ -139,7 +139,7 @@ import { batchProcess } from '@hideokamoto/sequential-promise'
 const results = await batchProcess(
   items,
   async (item) => await processItem(item),
-  { chunkSize: 5 }
+  { batchSize: 5 }
 )
 
 Pros: Clean API, ready to use
@@ -168,12 +168,12 @@ Cons: Slightly more verbose (5 lines)
 // utils.ts (write once, reuse forever)
 async function processInChunks<T, R>(
   items: T[],
-  chunkSize: number,
+  batchSize: number,
   processor: (item: T) => Promise<R>
 ): Promise<R[][]> {
   const results: R[][] = []
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize)
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize)
     results.push(await Promise.all(chunk.map(processor)))
   }
   return results
@@ -262,7 +262,7 @@ async function realWorldExample() {
   console.log('const results = await batchProcess(')
   console.log('  userIds,')
   console.log('  async (id) => await fetchUserData(id),')
-  console.log('  { chunkSize: 5 }')
+  console.log('  { batchSize: 5 }')
   console.log(')')
 
   console.log('\n🔧 Native approach:')

@@ -1,5 +1,5 @@
 import {
-  arrayChunk,
+  arrayBatch,
   batchProcess
 } from '../libs/index'
 
@@ -8,9 +8,9 @@ const createArrayByLength = (length: number): Array<number> => {
 }
 
 describe('batchProcess', () => {
-  it('should return the result as chunked', async() => {
+  it('should return the result as batched', async() => {
     const result = await batchProcess<number, number>([1,2,3], async (number) => number + 1, {
-      chunkSize: 2
+      batchSize: 2
     })
     expect(result).toEqual([
       [2,3],
@@ -22,24 +22,24 @@ describe('batchProcess', () => {
     [5, 5, 1],
     [10, 9, 2],
     [10, 11, 1],
-  ])('given %i items and the chunk size is %p, should the array be %p', async(length, chunkSize, expectedArrayLength) => {
+  ])('given %i items and the batch size is %p, should the array be %p', async(length, batchSize, expectedArrayLength) => {
     const list = createArrayByLength(length)
     const result = await batchProcess<number, number>(list, async (number) => number + 1, {
-      chunkSize
+      batchSize
     })
     expect(result.length).toEqual(expectedArrayLength)
   })
 })
 
-describe('arrayChunk', () => {
+describe('arrayBatch', () => {
   it.each([
     [5, 3, 2],
     [5, 5, 1],
     [10, 9, 2],
     [10, 11, 1],
-  ])('given %i items and the chunk size is %p, should the array be %p', (length, chunkSize, expectedArrayLength) => {
+  ])('given %i items and the batch size is %p, should the array be %p', (length, batchSize, expectedArrayLength) => {
     const list = createArrayByLength(length)
-    const chunkedArray = arrayChunk(list, chunkSize)
-    expect(chunkedArray.length).toEqual(expectedArrayLength)
+    const batchedArray = arrayBatch(list, batchSize)
+    expect(batchedArray.length).toEqual(expectedArrayLength)
   })
 })
