@@ -416,6 +416,77 @@ describe('batchProcess - retry mechanism', () => {
     expect(attempts[3]).toBe(1) // Succeeds on first try
     expect(result).toEqual([[2, 4, 6]])
   })
+
+  it('should treat maxAttempts of 0 as 1 attempt', async () => {
+    let attemptCount = 0
+
+    await expect(
+      batchProcess<number, number>(
+        [1],
+        async () => {
+          attemptCount++
+          throw new Error('Always fails')
+        },
+        {
+          retry: { maxAttempts: 0 }
+        }
+      )
+    ).rejects.toThrow('Always fails')
+
+    expect(attemptCount).toBe(1) // Should try at least once
+  })
+
+  it('should treat negative maxAttempts as 1 attempt', async () => {
+    let attemptCount = 0
+
+    await expect(
+      batchProcess<number, number>(
+        [1],
+        async () => {
+          attemptCount++
+          throw new Error('Always fails')
+        },
+        {
+          retry: { maxAttempts: -5 }
+        }
+      )
+    ).rejects.toThrow('Always fails')
+
+    expect(attemptCount).toBe(1) // Should try at least once
+  })
+
+  it('should cap exponential backoff delay', async () => {
+    const timestamps: number[] = []
+    let attemptCount = 0
+
+    await expect(
+      batchProcess<number, number>(
+        [1],
+        async () => {
+          timestamps.push(Date.now())
+          attemptCount++
+          throw new Error('Always fails')
+        },
+        {
+          // Use 40000ms initial delay so attempt 3 would be 160000ms without cap
+          retry: { maxAttempts: 3, backoff: 'exponential', initialDelay: 40000 }
+        }
+      )
+    ).rejects.toThrow('Always fails')
+
+    expect(attemptCount).toBe(3)
+
+    // Check that delays are capped at MAX_BACKOFF_DELAY (60000ms)
+    // With initial 40000ms and exponential backoff:
+    // Attempt 1: no delay
+    // Attempt 2: 40000ms delay
+    // Attempt 3: 160000ms -> capped to 60000ms
+
+    // Check delay between attempts 2 and 3 (should be capped)
+    const delay2 = timestamps[2] - timestamps[1]
+    expect(delay2).toBeGreaterThanOrEqual(55000) // Close to cap
+    expect(delay2).toBeLessThanOrEqual(65000) // Should be capped at 60s
+  }, 120000) // 2 minute timeout for this test
 })
 
 describe('batchProcess - error handling strategy', () => {

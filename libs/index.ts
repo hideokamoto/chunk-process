@@ -6,11 +6,11 @@
  * @property initialDelay - Initial delay in milliseconds between retries (default: 100ms)
  */
 export interface RetryOptions {
-  /** Maximum number of retry attempts for failed tasks */
+  /** Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored) */
   maxAttempts: number
-  /** Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay) */
+  /** Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at 60s) */
   backoff?: 'linear' | 'exponential'
-  /** Initial delay in milliseconds between retries (default: 100ms) */
+  /** Initial delay in milliseconds between retries (default: 100ms, minimum: 0) */
   initialDelay?: number
 }
 
@@ -139,20 +139,42 @@ export async function batchProcess<T = any, R = any>(
 
   // Helper function to wrap a promise with timeout
   const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+    // eslint-disable-next-line no-undef
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined
+
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      // eslint-disable-next-line no-undef
+      timeoutHandle = setTimeout(() => {
+        reject(new Error(`Task timed out after ${timeoutMs}ms`))
+      }, timeoutMs)
+    })
+
     return Promise.race([
-      promise,
-      new Promise<T>((_, reject) =>
-        // eslint-disable-next-line no-undef
-        setTimeout(() => reject(new Error(`Task timed out after ${timeoutMs}ms`)), timeoutMs)
-      )
+      promise.then(
+        (value) => {
+          // eslint-disable-next-line no-undef
+          if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
+          return value
+        },
+        (error) => {
+          // eslint-disable-next-line no-undef
+          if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
+          throw error
+        }
+      ),
+      timeoutPromise
     ])
   }
 
   // Helper function to execute a single item with retry
   const executeWithRetry = async (item: T): Promise<R> => {
-    const maxAttempts = options?.retry?.maxAttempts ?? 1
+    // Validate and normalize retry options
+    const rawMaxAttempts = options?.retry?.maxAttempts ?? 1
+    const maxAttempts = Math.max(1, Math.floor(Number(rawMaxAttempts) || 1))
     const backoff = options?.retry?.backoff ?? 'linear'
-    const initialDelay = options?.retry?.initialDelay ?? 100
+    const rawInitialDelay = options?.retry?.initialDelay ?? 100
+    const initialDelay = Math.max(0, Number(rawInitialDelay) || 100)
+    const MAX_BACKOFF_DELAY = 60000 // Cap at 60 seconds
 
     let lastError: unknown
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -173,7 +195,7 @@ export async function batchProcess<T = any, R = any>(
         // Calculate delay for next retry
         let delay: number
         if (backoff === 'exponential') {
-          delay = initialDelay * Math.pow(2, attempt - 1)
+          delay = Math.min(initialDelay * Math.pow(2, attempt - 1), MAX_BACKOFF_DELAY)
         } else {
           delay = initialDelay
         }
@@ -185,7 +207,7 @@ export async function batchProcess<T = any, R = any>(
     }
 
     // This should never be reached, but TypeScript needs it
-    throw lastError
+    throw lastError ?? new Error('Retry failed with unknown error')
   }
 
   // Helper function to handle errors based on continueOnError setting
