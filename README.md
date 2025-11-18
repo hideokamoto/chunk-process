@@ -1,15 +1,10 @@
-# Sequential Promise
+# Chunk Process
 Chunked parallel async task runner for rate limiting and resource control
 
-> [!WARNING]
-> **Breaking Changes in Major Update**
->
-> This library has undergone significant implementation changes. If you're upgrading from v1.1.1 or v1.1.2, the `arrayChunk` function has been removed. Use `arrayBatch` instead. See the [Breaking Changes](#breaking-changes-in-major-update) section below for migration details.
-
 ## API Docs
-https://hideokamoto.github.io/sequential-promise/
+https://hideokamoto.github.io/chunk-process/
 
-## Why Sequential Promise?
+## Why Chunk Process?
 
 When using `Promise.all()`, all async tasks execute in parallel, which can cause issues in certain scenarios. This library focuses on **chunk-based parallel processing** - executing N items in parallel, then moving to the next batch.
 
@@ -105,7 +100,7 @@ Utility function to split an array into batches of a specified size.
 
 ### TypeScript
 ```typescript
-import batchProcess from '@hideokamoto/sequential-promise'
+import batchProcess from 'chunk-process'
 
 // Process 100 API calls, 5 at a time
 const userIds = Array.from({ length: 100 }, (_, i) => i + 1)
@@ -120,7 +115,7 @@ console.log(results) // [[user1-5], [user6-10], ...]
 
 ### JavaScript
 ```javascript
-const batchProcess = require('@hideokamoto/sequential-promise')
+const batchProcess = require('chunk-process')
 
 // Process items in batches
 const results = await batchProcess(items, async (item) => {
@@ -135,7 +130,7 @@ const results = await batchProcess(items, async (item) => {
 When you need to process items in batches (running multiple items in parallel within each batch, but processing batches sequentially), use `batchProcess`:
 
 ```typescript
-import { batchProcess } from '@hideokamoto/sequential-promise'
+import { batchProcess } from 'chunk-process'
 
 // Process 10 items in batches of 3
 // Items 1-3 run in parallel, then 4-6, then 7-9, then 10
@@ -296,7 +291,7 @@ const results = await batchProcess<Task, Result | Error>(
 You can also use the `arrayBatch` function independently to split arrays:
 
 ```typescript
-import { arrayBatch } from '@hideokamoto/sequential-promise'
+import { arrayBatch } from 'chunk-process'
 
 const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const batches = arrayBatch(items, 3)
@@ -307,43 +302,66 @@ console.log(batches)
 
 This is useful when you need to prepare chunked data for other operations.
 
-## Breaking Changes in Major Update
+## Migration from @hideokamoto/sequential-promise
 
-This library has undergone significant implementation changes in the major version update. If you're upgrading from v1.1.1 or v1.1.2, please review the following breaking changes:
+This library (`chunk-process`) is a renamed and refocused version of `@hideokamoto/sequential-promise`. If you're currently using `@hideokamoto/sequential-promise`, here's how to migrate:
 
-### Removed Functions
+### Package Installation
 
-- **`arrayChunk`** has been removed. Use `arrayBatch` instead.
-  - **Migration:** Replace `arrayChunk(array, size)` with `arrayBatch(array, size)`
-  - The function signature and behavior are identical, only the name has changed.
+```bash
+# Uninstall old package
+npm uninstall @hideokamoto/sequential-promise
 
-### API Changes
-
-- The core functionality remains the same, but internal implementation has been refactored for better performance and maintainability.
-- All existing `batchProcess` and `arrayBatch` APIs remain backward compatible.
-
-### Migration Guide
-
-If you're using the deprecated `arrayChunk` function:
-
-```typescript
-// Before (v1.1.x)
-import { arrayChunk } from '@hideokamoto/sequential-promise'
-const batches = arrayChunk(items, 3)
-
-// After (v2.0.0+)
-import { arrayBatch } from '@hideokamoto/sequential-promise'
-const batches = arrayBatch(items, 3)
+# Install new package
+npm install chunk-process
 ```
 
-For `batchProcess`, no changes are required - it continues to work as before.
+### Import Statements
+
+Update all import statements in your code:
+
+```typescript
+// Before
+import batchProcess from '@hideokamoto/sequential-promise'
+import { batchProcess, arrayBatch } from '@hideokamoto/sequential-promise'
+
+// After
+import batchProcess from 'chunk-process'
+import { batchProcess, arrayBatch } from 'chunk-process'
+```
+
+### API Compatibility
+
+- **`batchProcess`**: Function signature and behavior remain identical. No code changes required.
+- **`arrayBatch`**: Function signature and behavior remain identical. No code changes required.
+- **`arrayChunk`** (deprecated): If you're still using the deprecated `arrayChunk` function, replace it with `arrayBatch`:
+  ```typescript
+  // Before
+  import { arrayChunk } from '@hideokamoto/sequential-promise'
+  const batches = arrayChunk(items, 3)
+  
+  // After
+  import { arrayBatch } from 'chunk-process'
+  const batches = arrayBatch(items, 3)
+  ```
+
+### What Changed?
+
+- **Package name**: `@hideokamoto/sequential-promise` → `chunk-process`
+- **Version**: Starting fresh at `v0.1.0` (was `v2.0.0`)
+- **Focus**: Library name now better reflects its purpose (chunk-based processing)
+- **API**: All APIs remain backward compatible - no breaking changes to function signatures or behavior
+
+### Why the Change?
+
+The library has been renamed to better reflect its core purpose: **chunk-based parallel processing** for rate limiting and resource control. The new name `chunk-process` is shorter, more descriptive, and easier to discover.
 
 ## contribution
 
 ```bash
 // clone
-$ git clone git@github.com:hideokamoto/sequential-promise.git
-$ cd sequential-promise
+$ git clone git@github.com:hideokamoto/chunk-process.git
+$ cd chunk-process
 
 // setup
 $ yarn
