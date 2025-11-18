@@ -1,7 +1,7 @@
 {
-  "name": "@hideokamoto/sequential-promise",
-  "version": "2.0.0",
-  "description": "simply async function runner as a sequential",
+  "name": "chunk-process",
+  "version": "0.1.0",
+  "description": "Chunked parallel async task runner for rate limiting and resource control",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,14 +29,21 @@
     "prepare": "husky"
   },
   "keywords": [
-    "stripe"
+    "batch",
+    "chunk",
+    "async",
+    "promise",
+    "rate-limit",
+    "throttle",
+    "parallel",
+    "processing"
   ],
   "bugs": {
-    "url": "https://github.com/hideokamoto/sequential-promise/issues"
+    "url": "https://github.com/hideokamoto/chunk-process/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hideokamoto/sequential-promise.git"
+    "url": "https://github.com/hideokamoto/chunk-process.git"
   },
   "author": "Hidetaka Okamoto <info@wp-kyoto.net> (https://wp-kyoto.net)",
   "license": "MIT",

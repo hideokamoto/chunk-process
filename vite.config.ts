@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'libs/index.ts'),
-      name: 'SequentialPromise',
+      name: 'ChunkProcess',
       fileName: 'index',
       formats: ['cjs', 'es']
     },
