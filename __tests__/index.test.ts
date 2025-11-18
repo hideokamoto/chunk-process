@@ -455,59 +455,46 @@ describe('batchProcess - retry mechanism', () => {
     expect(attemptCount).toBe(1) // Should try at least once
   })
 
-  it('should cap exponential backoff delay', async () => {
-    // Use fake timers to avoid long waits in CI
-    vi.useFakeTimers()
-    vi.setSystemTime(0) // Set initial system time to 0
+  it('should cap exponential backoff delay at 60 seconds', async () => {
+    // Mock setTimeout to capture delays without actually waiting
+    const delays: number[] = []
+    const originalSetTimeout = global.setTimeout
+
+    global.setTimeout = ((cb: any, delay: number) => {
+      delays.push(delay)
+      // Execute callback immediately to avoid blocking
+      return originalSetTimeout(cb, 0)
+    }) as any
 
     try {
-      const timestamps: number[] = []
       let attemptCount = 0
 
-      // Start the batch process (it will be paused at setTimeout calls)
-      const processPromise = batchProcess<number, number>(
-        [1],
-        async () => {
-          timestamps.push(Date.now())
-          attemptCount++
-          throw new Error('Always fails')
-        },
-        {
-          // Use 40000ms initial delay so attempt 3 would be 160000ms without cap
-          retry: { maxAttempts: 3, backoff: 'exponential', initialDelay: 40000 }
-        }
-      )
+      await expect(
+        batchProcess<number, number>(
+          [1],
+          async () => {
+            attemptCount++
+            throw new Error('Always fails')
+          },
+          {
+            // Use 30000ms initial delay so:
+            // - Attempt 2: 30000ms
+            // - Attempt 3: 60000ms (would be 60000ms, at cap)
+            // - Attempt 4: 60000ms (would be 120000ms, capped to 60000ms)
+            // - Attempt 5: 60000ms (would be 240000ms, capped to 60000ms)
+            retry: { maxAttempts: 5, backoff: 'exponential', initialDelay: 30000 }
+          }
+        )
+      ).rejects.toThrow('Always fails')
 
-      // Attempt 1: executes immediately
-      await vi.advanceTimersByTimeAsync(0)
-      expect(attemptCount).toBe(1)
-
-      // Attempt 2: after 40000ms delay
-      await vi.advanceTimersByTimeAsync(40000)
-      expect(attemptCount).toBe(2)
-
-      // Attempt 3: after 60000ms delay (160000ms capped to 60000ms)
-      await vi.advanceTimersByTimeAsync(60000)
-      expect(attemptCount).toBe(3)
-
-      // Wait for the promise to reject
-      await expect(processPromise).rejects.toThrow('Always fails')
-
-      // Check that delays are capped at MAX_BACKOFF_DELAY (60000ms)
-      // With initial 40000ms and exponential backoff:
-      // Attempt 1: no delay (timestamp 0)
-      // Attempt 2: 40000ms delay (timestamp 40000)
-      // Attempt 3: 160000ms -> capped to 60000ms (timestamp 100000)
-
-      expect(timestamps[0]).toBe(0)
-      expect(timestamps[1]).toBe(40000)
-      expect(timestamps[2]).toBe(100000) // 40000 + 60000 (capped)
-
-      // Verify the cap was applied (delay2 should be 60000, not 160000)
-      const delay2 = timestamps[2] - timestamps[1]
-      expect(delay2).toBe(60000) // Exactly capped at 60s
+      expect(attemptCount).toBe(5)
+      expect(delays).toHaveLength(4) // 4 retries after first attempt
+      expect(delays[0]).toBe(30000)  // 30s
+      expect(delays[1]).toBe(60000)  // 60s (already at cap)
+      expect(delays[2]).toBe(60000)  // 60s (capped, would be 120s)
+      expect(delays[3]).toBe(60000)  // 60s (capped, would be 240s)
     } finally {
-      vi.useRealTimers()
+      global.setTimeout = originalSetTimeout
     }
   })
 })
