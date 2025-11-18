@@ -52,8 +52,13 @@ await batchProcess(largeDataset, async (data) => {
 - **Simple API**: Easy-to-use chunk processing without writing boilerplate
 - **Type-Safe**: Full TypeScript support with generics
 - **Lightweight**: Zero dependencies, minimal footprint
-- **Rate Limiting**: Perfect for API rate limits and resource constraints
+- **Rate Limiting**: Perfect for API rate limits and resource constraints with built-in delay controls
 - **Predictable**: Guaranteed chunk execution order and result order
+- **Resilient**: Built-in retry mechanisms with exponential/linear backoff strategies
+- **Robust Error Handling**: Continue processing on errors with detailed error tracking
+- **Progress Tracking**: Monitor batch processing progress in real-time
+- **Flexible Output**: Choose between nested or flattened result arrays
+- **Timeout Control**: Prevent hanging tasks with configurable timeouts
 
 ## Common Scenarios
 
@@ -67,7 +72,7 @@ await batchProcess(largeDataset, async (data) => {
 
 This package exports the following functions:
 
-### `batchProcess<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: {batchSize?: number}): Promise<Array<Array<R>>>`
+### `batchProcess<T, R>(targets: T[], callback: (prop: T) => Promise<R>, options?: BatchProcessOptions): Promise<Array<Array<R>> | Array<R>>`
 Process items in batches, running items within each batch in parallel, but processing batches sequentially.
 
 - **Type Parameters:**
@@ -75,7 +80,17 @@ Process items in batches, running items within each batch in parallel, but proce
   - `R`: Type of the result returned by the callback function
 - **Options:**
   - `batchSize`: Number of items to process in parallel within each batch (default: 1)
-- **Returns:** Nested array of results, grouped by batches
+  - `onProgress`: Callback function called after each batch completes, receives (completed, total) batches
+  - `delayBetweenBatches`: Delay in milliseconds to wait between batches (useful for rate limiting)
+  - `retry`: Retry configuration for failed tasks
+    - `maxAttempts`: Maximum number of retry attempts
+    - `backoff`: 'linear' or 'exponential' backoff strategy
+    - `initialDelay`: Initial delay in milliseconds between retries (default: 100ms)
+    - `maxDelay`: Maximum delay in milliseconds for exponential backoff (default: 30000ms)
+  - `continueOnError`: If true, errors are returned in results instead of throwing (default: false)
+  - `flatten`: If true, returns a flat array instead of nested arrays (default: false)
+  - `timeout`: Maximum time in milliseconds for each task to complete (default: no timeout)
+- **Returns:** Nested array of results (or flat array if `flatten: true`)
 
 ### `arrayBatch<T>(inputArray: T[], batchSize?: number): T[][]`
 Utility function to split an array into batches of a specified size.
@@ -139,6 +154,142 @@ console.log(result)
 ```
 
 **Note:** The return type is `Array<Array<R>>` - results are grouped by batches.
+
+### Progress Tracking
+
+Track the progress of batch processing with the `onProgress` callback:
+
+```typescript
+await batchProcess(
+  userIds,
+  async (userId) => await fetchUserData(userId),
+  {
+    batchSize: 10,
+    onProgress: (completed, total) => {
+      const percentage = (completed / total * 100).toFixed(1)
+      console.log(`Progress: ${completed}/${total} batches (${percentage}%)`)
+    }
+  }
+)
+```
+
+### Rate Limiting with Delays
+
+Add delays between batches to comply with API rate limits:
+
+```typescript
+// Process 5 items at a time, waiting 1 second between batches
+await batchProcess(
+  apiRequests,
+  async (request) => await fetch(request.url),
+  {
+    batchSize: 5,
+    delayBetweenBatches: 1000 // 1 second delay
+  }
+)
+```
+
+### Retry Failed Tasks
+
+Automatically retry failed tasks with configurable backoff strategies:
+
+```typescript
+// Retry up to 3 times with exponential backoff
+const results = await batchProcess(
+  unreliableOperations,
+  async (operation) => await performOperation(operation),
+  {
+    retry: {
+      maxAttempts: 3,
+      backoff: 'exponential', // or 'linear'
+      initialDelay: 100, // Start with 100ms delay
+      maxDelay: 30000 // Cap exponential backoff at 30 seconds (default: 30000ms)
+    }
+  }
+)
+```
+
+### Error Handling
+
+Continue processing even when some items fail:
+
+```typescript
+const results = await batchProcess<Item, Result | Error>(
+  items,
+  async (item) => await processItem(item),
+  {
+    continueOnError: true
+  }
+)
+
+// Check results for errors
+results.flat().forEach((result, index) => {
+  if (result instanceof Error) {
+    console.error(`Item ${index} failed:`, result.message)
+  }
+})
+```
+
+### Flatten Results
+
+Get a flat array instead of nested batches:
+
+```typescript
+const flatResults = await batchProcess(
+  [1, 2, 3, 4, 5, 6],
+  async (num) => num * 2,
+  {
+    batchSize: 2,
+    flatten: true
+  }
+)
+
+console.log(flatResults)
+// Output: [2, 4, 6, 8, 10, 12]
+```
+
+### Timeout Control
+
+Set a maximum execution time for each task:
+
+```typescript
+try {
+  await batchProcess(
+    tasks,
+    async (task) => await performTask(task),
+    {
+      timeout: 5000 // 5 seconds per task
+    }
+  )
+} catch (error) {
+  console.error('Task timed out:', error.message)
+}
+```
+
+### Combining Features
+
+Combine multiple features for robust batch processing:
+
+```typescript
+const results = await batchProcess<Task, Result | Error>(
+  tasks,
+  async (task) => await processTask(task),
+  {
+    batchSize: 5,
+    delayBetweenBatches: 1000,
+    retry: {
+      maxAttempts: 3,
+      backoff: 'exponential'
+    },
+    continueOnError: true,
+    timeout: 10000,
+    flatten: true,
+    onProgress: (completed, total) => {
+      console.log(`Processing: ${completed}/${total} batches`)
+    }
+  }
+)
+```
 
 ### Using `arrayBatch` Utility
 

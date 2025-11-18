@@ -1,10 +1,57 @@
 /**
+ * Retry options for batch processing
+ *
+ * @property maxAttempts - Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored)
+ * @property backoff - Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at maxDelay)
+ * @property initialDelay - Initial delay in milliseconds between retries (default: 100ms, minimum: 0)
+ * @property maxDelay - Maximum delay in milliseconds for exponential backoff (default: 30000ms, minimum: 0)
+ */
+export interface RetryOptions {
+  /** Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored) */
+  maxAttempts: number
+  /** Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at maxDelay) */
+  backoff?: 'linear' | 'exponential'
+  /** Initial delay in milliseconds between retries (default: 100ms, minimum: 0) */
+  initialDelay?: number
+  /** Maximum delay in milliseconds for exponential backoff (default: 30000ms, minimum: 0) */
+  maxDelay?: number
+}
+
+/**
+ * Options for batch processing
+ *
+ * @property batchSize - Number of items to process in parallel within each batch (default: 1)
+ * @property onProgress - Callback function called after each batch completes, receives (completed, total) batches
+ * @property delayBetweenBatches - Delay in milliseconds to wait between batches (useful for rate limiting)
+ * @property retry - Retry configuration for failed tasks
+ * @property continueOnError - If true, errors are returned in results instead of throwing (default: false)
+ * @property flatten - If true, returns a flat array instead of nested arrays (default: false)
+ * @property timeout - Maximum time in milliseconds for each task to complete (default: no timeout)
+ */
+export interface BatchProcessOptions {
+  /** Number of items to process in parallel within each batch (default: 1) */
+  batchSize?: number
+  /** Callback function called after each batch completes, receives (completed, total) batches */
+  onProgress?: (completed: number, total: number) => void
+  /** Delay in milliseconds to wait between batches (useful for rate limiting) */
+  delayBetweenBatches?: number
+  /** Retry configuration for failed tasks */
+  retry?: RetryOptions
+  /** If true, errors are returned in results instead of throwing (default: false) */
+  continueOnError?: boolean
+  /** If true, returns a flat array instead of nested arrays (default: false) */
+  flatten?: boolean
+  /** Maximum time in milliseconds for each task to complete (default: no timeout) */
+  timeout?: number
+}
+
+/**
  * Process items in batches, running items within each batch in parallel,
  * but processing batches sequentially.
  *
  * This is useful for rate limiting API calls or controlling resource usage.
  *
- * @example
+ * @example Basic usage
  * ```typescript
  * // Process 10 items in batches of 3
  * const result = await batchProcess(
@@ -18,6 +65,44 @@
  * // Output: [[2, 4, 6], [8, 10, 12], [14, 16, 18], [20]]
  * ```
  *
+ * @example With progress tracking and rate limiting
+ * ```typescript
+ * await batchProcess(
+ *   userIds,
+ *   async (id) => await fetchUser(id),
+ *   {
+ *     batchSize: 5,
+ *     delayBetweenBatches: 1000, // Wait 1 second between batches
+ *     onProgress: (completed, total) => {
+ *       console.log(`Progress: ${completed}/${total} batches`)
+ *     }
+ *   }
+ * )
+ * ```
+ *
+ * @example With retry and error handling
+ * ```typescript
+ * const results = await batchProcess(
+ *   items,
+ *   async (item) => await processItem(item),
+ *   {
+ *     retry: { maxAttempts: 3, backoff: 'exponential' },
+ *     continueOnError: true,
+ *     timeout: 5000
+ *   }
+ * )
+ * ```
+ *
+ * @example With flattened results
+ * ```typescript
+ * const result = await batchProcess(
+ *   [1, 2, 3, 4, 5, 6],
+ *   async (num) => num * 2,
+ *   { batchSize: 2, flatten: true }
+ * )
+ * // Output: [2, 4, 6, 8, 10, 12]
+ * ```
+ *
  * @note For simple sequential processing without batching, use native for...of:
  * ```typescript
  * const results = []
@@ -28,17 +113,155 @@
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const batchProcess = async <T = any, R = any>(targets: T[], callback: (prop: T) => Promise<R>, options?: {
-batchSize?: number
-}): Promise<Array<Array<R>>> => {
+export async function batchProcess<T = any, R = any>(
+  targets: T[],
+  callback: (prop: T) => Promise<R>,
+  options: BatchProcessOptions & { flatten: true }
+): Promise<Array<R>>
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, no-redeclare
+export async function batchProcess<T = any, R = any>(
+  targets: T[],
+  callback: (prop: T) => Promise<R>,
+  options?: BatchProcessOptions & { flatten?: false }
+): Promise<Array<Array<R>>>
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, no-redeclare
+export async function batchProcess<T = any, R = any>(
+  targets: T[],
+  callback: (prop: T) => Promise<R>,
+  options?: BatchProcessOptions
+): Promise<Array<Array<R>> | Array<R>> {
   const batchSize = options?.batchSize ?? 1
   const batches = arrayBatch<T>(targets, batchSize)
+  const continueOnError = options?.continueOnError ?? false
 
   const results: Array<Array<R>> = []
-  for (const batch of batches) {
-    const batchResults = await Promise.all(batch.map(callback))
-    results.push(batchResults)
+  let completed = 0
+  const total = batches.length
+
+  // Helper function to wrap a promise with timeout
+  const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined
+
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        timeoutHandle = undefined // Clear reference after timeout fires
+        reject(new Error(`Task timed out after ${timeoutMs}ms`))
+      }, timeoutMs)
+    })
+
+    return Promise.race([
+      promise.then(
+        (value) => {
+          if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle)
+            timeoutHandle = undefined
+          }
+          return value
+        },
+        (error) => {
+          if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle)
+            timeoutHandle = undefined
+          }
+          throw error
+        }
+      ),
+      timeoutPromise.then(
+        (value) => {
+          // This should never happen as timeoutPromise always rejects
+          return value
+        },
+        (error) => {
+          // Timeout occurred - ensure cleanup
+          if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle)
+            timeoutHandle = undefined
+          }
+          throw error
+        }
+      )
+    ])
   }
+
+  // Helper function to execute a single item with retry
+  const executeWithRetry = async (item: T): Promise<R> => {
+    // Validate and normalize retry options
+    const rawMaxAttempts = options?.retry?.maxAttempts ?? 1
+    const maxAttempts = Math.max(1, Math.floor(Number(rawMaxAttempts) || 1))
+    const backoff = options?.retry?.backoff ?? 'linear'
+    const rawInitialDelay = options?.retry?.initialDelay ?? 100
+    const initialDelay = Math.max(0, Number(rawInitialDelay) || 100)
+    const rawMaxDelay = options?.retry?.maxDelay ?? 30000
+    const maxDelay = Math.max(0, Number(rawMaxDelay) || 30000)
+
+    let lastError: unknown
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const taskPromise = callback(item)
+        const result = options?.timeout
+          ? await withTimeout(taskPromise, options.timeout)
+          : await taskPromise
+        return result
+      } catch (error) {
+        lastError = error
+
+        // If we've exhausted all attempts, throw the error
+        if (attempt >= maxAttempts) {
+          throw error
+        }
+
+        // Calculate delay for next retry
+        let delay: number
+        if (backoff === 'exponential') {
+          delay = Math.min(initialDelay * Math.pow(2, attempt - 1), maxDelay)
+        } else {
+          delay = initialDelay
+        }
+
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+
+    // This should never be reached, but TypeScript needs it
+    throw lastError ?? new Error('Retry failed with unknown error')
+  }
+
+  // Helper function to handle errors based on continueOnError setting
+  const executeWithErrorHandling = async (item: T): Promise<R> => {
+    try {
+      return await executeWithRetry(item)
+    } catch (error) {
+      if (continueOnError) {
+        // Return the error as part of the result
+        return error as R
+      }
+      throw error
+    }
+  }
+
+  for (const batch of batches) {
+    // Add delay before processing batch (except for the first batch)
+    if (completed > 0 && options?.delayBetweenBatches) {
+      await new Promise(resolve => setTimeout(resolve, options.delayBetweenBatches))
+    }
+
+    const batchResults = await Promise.all(batch.map(executeWithErrorHandling))
+    results.push(batchResults)
+    completed++
+
+    if (options?.onProgress) {
+      options.onProgress(completed, total)
+    }
+  }
+
+  // Flatten results if requested
+  if (options?.flatten) {
+    return results.flat() as Array<R>
+  }
+
   return results
 }
 
