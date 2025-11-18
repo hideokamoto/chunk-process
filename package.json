@@ -1,6 +1,6 @@
 {
   "name": "chunk-process",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Chunked parallel async task runner for rate limiting and resource control",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
