@@ -146,6 +146,7 @@ export async function batchProcess<T = any, R = any>(
 
     const timeoutPromise = new Promise<T>((_, reject) => {
       timeoutHandle = setTimeout(() => {
+        timeoutHandle = undefined // Clear reference after timeout fires
         reject(new Error(`Task timed out after ${timeoutMs}ms`))
       }, timeoutMs)
     })
@@ -153,15 +154,34 @@ export async function batchProcess<T = any, R = any>(
     return Promise.race([
       promise.then(
         (value) => {
-          if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
+          if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle)
+            timeoutHandle = undefined
+          }
           return value
         },
         (error) => {
-          if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
+          if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle)
+            timeoutHandle = undefined
+          }
           throw error
         }
       ),
-      timeoutPromise
+      timeoutPromise.then(
+        (value) => {
+          // This should never happen as timeoutPromise always rejects
+          return value
+        },
+        (error) => {
+          // Timeout occurred - ensure cleanup
+          if (timeoutHandle !== undefined) {
+            clearTimeout(timeoutHandle)
+            timeoutHandle = undefined
+          }
+          throw error
+        }
+      )
     ])
   }
 
