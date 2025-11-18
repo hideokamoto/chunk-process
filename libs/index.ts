@@ -2,16 +2,19 @@
  * Retry options for batch processing
  *
  * @property maxAttempts - Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored)
- * @property backoff - Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at 60s)
+ * @property backoff - Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at maxDelay)
  * @property initialDelay - Initial delay in milliseconds between retries (default: 100ms, minimum: 0)
+ * @property maxDelay - Maximum delay in milliseconds for exponential backoff (default: 30000ms, minimum: 0)
  */
 export interface RetryOptions {
   /** Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored) */
   maxAttempts: number
-  /** Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at 60s) */
+  /** Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at maxDelay) */
   backoff?: 'linear' | 'exponential'
   /** Initial delay in milliseconds between retries (default: 100ms, minimum: 0) */
   initialDelay?: number
+  /** Maximum delay in milliseconds for exponential backoff (default: 30000ms, minimum: 0) */
+  maxDelay?: number
 }
 
 /**
@@ -170,7 +173,8 @@ export async function batchProcess<T = any, R = any>(
     const backoff = options?.retry?.backoff ?? 'linear'
     const rawInitialDelay = options?.retry?.initialDelay ?? 100
     const initialDelay = Math.max(0, Number(rawInitialDelay) || 100)
-    const MAX_BACKOFF_DELAY = 60000 // Cap at 60 seconds
+    const rawMaxDelay = options?.retry?.maxDelay ?? 30000
+    const maxDelay = Math.max(0, Number(rawMaxDelay) || 30000)
 
     let lastError: unknown
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -191,7 +195,7 @@ export async function batchProcess<T = any, R = any>(
         // Calculate delay for next retry
         let delay: number
         if (backoff === 'exponential') {
-          delay = Math.min(initialDelay * Math.pow(2, attempt - 1), MAX_BACKOFF_DELAY)
+          delay = Math.min(initialDelay * Math.pow(2, attempt - 1), maxDelay)
         } else {
           delay = initialDelay
         }

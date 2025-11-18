@@ -86,6 +86,7 @@ Process items in batches, running items within each batch in parallel, but proce
     - `maxAttempts`: Maximum number of retry attempts
     - `backoff`: 'linear' or 'exponential' backoff strategy
     - `initialDelay`: Initial delay in milliseconds between retries (default: 100ms)
+    - `maxDelay`: Maximum delay in milliseconds for exponential backoff (default: 30000ms)
   - `continueOnError`: If true, errors are returned in results instead of throwing (default: false)
   - `flatten`: If true, returns a flat array instead of nested arrays (default: false)
   - `timeout`: Maximum time in milliseconds for each task to complete (default: no timeout)
@@ -201,7 +202,8 @@ const results = await batchProcess(
     retry: {
       maxAttempts: 3,
       backoff: 'exponential', // or 'linear'
-      initialDelay: 100 // Start with 100ms delay
+      initialDelay: 100, // Start with 100ms delay
+      maxDelay: 30000 // Cap exponential backoff at 30 seconds (default: 30000ms)
     }
   }
 )

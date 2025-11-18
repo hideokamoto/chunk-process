@@ -455,7 +455,7 @@ describe('batchProcess - retry mechanism', () => {
     expect(attemptCount).toBe(1) // Should try at least once
   })
 
-  it('should cap exponential backoff delay at 60 seconds', async () => {
+  it('should cap exponential backoff delay at 30 seconds by default', async () => {
     // Mock setTimeout to capture delays without actually waiting
     const delays: number[] = []
     const originalSetTimeout = global.setTimeout
@@ -477,12 +477,55 @@ describe('batchProcess - retry mechanism', () => {
             throw new Error('Always fails')
           },
           {
-            // Use 30000ms initial delay so:
+            // Use 20000ms initial delay so:
+            // - Attempt 2: 20000ms
+            // - Attempt 3: 30000ms (would be 40000ms, capped to 30000ms)
+            // - Attempt 4: 30000ms (would be 80000ms, capped to 30000ms)
+            // - Attempt 5: 30000ms (would be 160000ms, capped to 30000ms)
+            retry: { maxAttempts: 5, backoff: 'exponential', initialDelay: 20000 }
+          }
+        )
+      ).rejects.toThrow('Always fails')
+
+      expect(attemptCount).toBe(5)
+      expect(delays).toHaveLength(4) // 4 retries after first attempt
+      expect(delays[0]).toBe(20000)  // 20s
+      expect(delays[1]).toBe(30000)  // 30s (capped, would be 40s)
+      expect(delays[2]).toBe(30000)  // 30s (capped, would be 80s)
+      expect(delays[3]).toBe(30000)  // 30s (capped, would be 160s)
+    } finally {
+      global.setTimeout = originalSetTimeout
+    }
+  })
+
+  it('should respect custom maxDelay option', async () => {
+    // Mock setTimeout to capture delays without actually waiting
+    const delays: number[] = []
+    const originalSetTimeout = global.setTimeout
+
+    global.setTimeout = ((cb: any, delay: number) => {
+      delays.push(delay)
+      // Execute callback immediately to avoid blocking
+      return originalSetTimeout(cb, 0)
+    }) as any
+
+    try {
+      let attemptCount = 0
+
+      await expect(
+        batchProcess<number, number>(
+          [1],
+          async () => {
+            attemptCount++
+            throw new Error('Always fails')
+          },
+          {
+            // Use 30000ms initial delay with 60000ms maxDelay so:
             // - Attempt 2: 30000ms
             // - Attempt 3: 60000ms (would be 60000ms, at cap)
             // - Attempt 4: 60000ms (would be 120000ms, capped to 60000ms)
             // - Attempt 5: 60000ms (would be 240000ms, capped to 60000ms)
-            retry: { maxAttempts: 5, backoff: 'exponential', initialDelay: 30000 }
+            retry: { maxAttempts: 5, backoff: 'exponential', initialDelay: 30000, maxDelay: 60000 }
           }
         )
       ).rejects.toThrow('Always fails')
