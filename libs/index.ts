@@ -1,9 +1,9 @@
 /**
  * Retry options for batch processing
  *
- * @property maxAttempts - Maximum number of retry attempts for failed tasks
- * @property backoff - Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay)
- * @property initialDelay - Initial delay in milliseconds between retries (default: 100ms)
+ * @property maxAttempts - Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored)
+ * @property backoff - Backoff strategy: 'linear' (constant delay) or 'exponential' (increasing delay, capped at 60s)
+ * @property initialDelay - Initial delay in milliseconds between retries (default: 100ms, minimum: 0)
  */
 export interface RetryOptions {
   /** Maximum number of retry attempts for failed tasks (minimum: 1, non-integers are floored) */
@@ -139,11 +139,9 @@ export async function batchProcess<T = any, R = any>(
 
   // Helper function to wrap a promise with timeout
   const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
-    // eslint-disable-next-line no-undef
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined
 
     const timeoutPromise = new Promise<T>((_, reject) => {
-      // eslint-disable-next-line no-undef
       timeoutHandle = setTimeout(() => {
         reject(new Error(`Task timed out after ${timeoutMs}ms`))
       }, timeoutMs)
@@ -152,12 +150,10 @@ export async function batchProcess<T = any, R = any>(
     return Promise.race([
       promise.then(
         (value) => {
-          // eslint-disable-next-line no-undef
           if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
           return value
         },
         (error) => {
-          // eslint-disable-next-line no-undef
           if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
           throw error
         }
@@ -201,7 +197,6 @@ export async function batchProcess<T = any, R = any>(
         }
 
         // Wait before retrying
-        // eslint-disable-next-line no-undef
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
@@ -226,7 +221,6 @@ export async function batchProcess<T = any, R = any>(
   for (const batch of batches) {
     // Add delay before processing batch (except for the first batch)
     if (completed > 0 && options?.delayBetweenBatches) {
-      // eslint-disable-next-line no-undef
       await new Promise(resolve => setTimeout(resolve, options.delayBetweenBatches))
     }
 
