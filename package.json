@@ -25,7 +25,8 @@
     "lint": "eslint libs/",
     "lint:fix": "eslint libs/ --fix",
     "doc": "typedoc --out docs libs/ && touch docs/.nojekyll",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "pnpm run build && pnpm test"
   },
   "keywords": [
     "batch",
@@ -40,14 +41,21 @@
   "bugs": {
     "url": "https://github.com/hideokamoto/chunk-process/issues"
   },
+  "homepage": "https://github.com/hideokamoto/chunk-process#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/hideokamoto/chunk-process.git"
   },
-  "author": "Hidetaka Okamoto <info@wp-kyoto.net> (https://wp-kyoto.net)",
+  "author": {
+    "name": "Hidetaka Okamoto",
+    "url": "https://github.com/hideokamoto"
+  },
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
