@@ -39,7 +39,13 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: website/pnpm-lock.yaml
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            website/pnpm-lock.yaml
+
+      # TypeDoc type-checks ../libs/index.ts, which resolves @types/node from the root node_modules
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        working-directory: .
 
       - run: pnpm install --frozen-lockfile
 
