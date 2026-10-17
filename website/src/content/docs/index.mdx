@@ -1,0 +1,41 @@
+---
+title: chunk-process
+description: Chunked parallel async task runner for rate limiting and resource control
+template: splash
+editUrl: false
+hero:
+  tagline: Run N async tasks in parallel, then move on to the next batch. Built for API rate limits and resource control.
+  actions:
+    - text: Getting Started
+      link: /getting-started/
+      icon: right-arrow
+    - text: API Reference
+      link: /api/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+```typescript
+import { batchProcess } from 'chunk-process'
+
+// Process 100 API calls, 5 at a time
+const results = await batchProcess(userIds, async (userId) => {
+  return await fetchUserFromAPI(userId)
+}, { batchSize: 5 })
+```
+
+<CardGrid>
+  <Card title="Chunk-based rate limiting" icon="rocket">
+    Items in a batch run in parallel with `Promise.all`; batches run one after another, with an optional delay between them.
+  </Card>
+  <Card title="Retry & timeout" icon="setting">
+    Retry failed tasks with linear or exponential backoff and cap each task with a timeout.
+  </Card>
+  <Card title="Error tolerant" icon="warning">
+    With `continueOnError`, failed items are returned as `Error` values instead of rejecting the whole run.
+  </Card>
+  <Card title="Type-safe, zero dependencies" icon="seti:typescript">
+    Written in TypeScript with generics and overloads. Ships ESM and CommonJS builds.
+  </Card>
+</CardGrid>

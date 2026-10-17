@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+
+# Generated at build time
+src/content/docs/api/
+src/content/docs/releases/

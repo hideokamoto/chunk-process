@@ -1,8 +1,8 @@
 # Chunk Process
 Chunked parallel async task runner for rate limiting and resource control
 
-## API Docs
-https://hideokamoto.github.io/chunk-process/
+## Documentation
+https://chunk-process.hidetaka.dev/
 
 ## Why Chunk Process?
 
@@ -378,7 +378,16 @@ $ yarn run lint --fix
 
 // Build
 $ yarn run build
+```
 
-// Rebuild docs
-$ yarn run doc
+### Documentation site
+
+The documentation site lives in `website/` and is built with [Astro Starlight](https://starlight.astro.build).
+The API reference is generated from `libs/index.ts` with TypeDoc, and the release notes are imported from GitHub Releases at build time.
+It is deployed to GitHub Pages by `.github/workflows/deploy-docs.yml`.
+
+```bash
+$ cd website
+$ pnpm install
+$ pnpm dev    # set GITHUB_TOKEN to avoid the GitHub API rate limit
 ```
