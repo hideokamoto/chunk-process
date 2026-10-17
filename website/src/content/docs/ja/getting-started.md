@@ -66,9 +66,11 @@ console.log(result)
 ```javascript
 const { batchProcess } = require('chunk-process')
 
-const results = await batchProcess(items, async (item) => {
-  return await processItem(item)
-}, { batchSize: 10 })
+async function main() {
+  const results = await batchProcess(items, async (item) => {
+    return await processItem(item)
+  }, { batchSize: 10 })
+}
 ```
 
 ## オプション一覧

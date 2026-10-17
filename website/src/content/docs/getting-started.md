@@ -66,9 +66,11 @@ By default the result is grouped by batch (`Array<Array<R>>`). Pass `flatten: tr
 ```javascript
 const { batchProcess } = require('chunk-process')
 
-const results = await batchProcess(items, async (item) => {
-  return await processItem(item)
-}, { batchSize: 10 })
+async function main() {
+  const results = await batchProcess(items, async (item) => {
+    return await processItem(item)
+  }, { batchSize: 10 })
+}
 ```
 
 ## Options at a glance

@@ -51,7 +51,7 @@ export async function fetchReleases(): Promise<Release[]> {
 	const releases: Release[] = [];
 	for (let page = 1; ; page++) {
 		const url = `https://api.github.com/repos/${REPOSITORY}/releases?per_page=${PER_PAGE}&page=${page}`;
-		const res = await fetch(url, { headers });
+		const res = await fetch(url, { headers, signal: AbortSignal.timeout(30_000) });
 		if (!res.ok) {
 			throw new Error(`GitHub Releases API failed: ${res.status} ${res.statusText} (${url})`);
 		}
