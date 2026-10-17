@@ -7,11 +7,12 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'libs/index.ts'),
       name: 'ChunkProcess',
-      fileName: 'index',
+      fileName: (format) => (format === 'es' ? 'index.mjs' : 'index.cjs'),
       formats: ['cjs', 'es']
     },
     rollupOptions: {
-      external: []
+      external: [],
+      output: { exports: 'named' }
     },
     sourcemap: true,
     target: 'es2016'
