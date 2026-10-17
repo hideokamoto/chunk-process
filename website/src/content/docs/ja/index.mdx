@@ -1,0 +1,41 @@
+---
+title: chunk-process
+description: レート制限とリソース制御のための、チャンク単位の並列非同期タスクランナー
+template: splash
+editUrl: false
+hero:
+  tagline: N 個の非同期タスクを並列に実行し、終わったら次のバッチへ。API のレート制限やリソース制御のために作られています。
+  actions:
+    - text: はじめる
+      link: /ja/getting-started/
+      icon: right-arrow
+    - text: API リファレンス（英語）
+      link: /api/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+```typescript
+import { batchProcess } from 'chunk-process'
+
+// 100 件の API 呼び出しを 5 件ずつ処理する
+const results = await batchProcess(userIds, async (userId) => {
+  return await fetchUserFromAPI(userId)
+}, { batchSize: 5 })
+```
+
+<CardGrid>
+  <Card title="チャンク単位のレート制限" icon="rocket">
+    バッチ内の要素は `Promise.all` で並列に実行し、バッチ同士は順番に実行します。バッチ間に待機時間も挟めます。
+  </Card>
+  <Card title="リトライとタイムアウト" icon="setting">
+    失敗したタスクを線形または指数バックオフでリトライし、タスクごとにタイムアウトを設定できます。
+  </Card>
+  <Card title="エラー耐性" icon="warning">
+    `continueOnError` を使うと、失敗した要素は全体を reject せず `Error` 値として結果に返ります。
+  </Card>
+  <Card title="型安全・依存ゼロ" icon="seti:typescript">
+    TypeScript のジェネリクスとオーバーロードで型付けされ、ESM と CommonJS の両方を配布しています。
+  </Card>
+</CardGrid>

@@ -10,6 +10,12 @@ export default defineConfig({
     starlight({
       title: 'chunk-process',
       description: 'Chunked parallel async task runner for rate limiting and resource control',
+      // English lives at the root (/), Japanese under /ja/.
+      defaultLocale: 'root',
+      locales: {
+        root: { label: 'English', lang: 'en' },
+        ja: { label: '日本語', lang: 'ja' },
+      },
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/hideokamoto/chunk-process' },
         { icon: 'npm', label: 'npm', href: 'https://www.npmjs.com/package/chunk-process' },
@@ -32,10 +38,10 @@ export default defineConfig({
         }),
       ],
       sidebar: [
-        { label: 'Getting Started', slug: 'getting-started' },
-        { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
+        { label: 'Getting Started', translations: { ja: 'はじめに' }, slug: 'getting-started' },
+        { label: 'Guides', translations: { ja: 'ガイド' }, items: [{ autogenerate: { directory: 'guides' } }] },
         typeDocSidebarGroup,
-        { label: 'Releases', collapsed: true, items: [{ autogenerate: { directory: 'releases' } }] },
+        { label: 'Releases', translations: { ja: 'リリース' }, slug: 'reference/releases' },
       ],
     }),
   ],
