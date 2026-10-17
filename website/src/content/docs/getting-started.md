@@ -20,6 +20,14 @@ for (const item of items) {
 ```
 :::
 
+### Common scenarios
+
+- External payment API calls (Stripe, PayPal, etc.)
+- Bulk file uploads to cloud storage
+- Database migrations with dependencies
+- Web scraping with request throttling
+- Resource-constrained environments (AWS Lambda, edge functions)
+
 ## Installation
 
 ```bash

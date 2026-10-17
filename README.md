@@ -378,9 +378,6 @@ $ yarn run lint --fix
 
 // Build
 $ yarn run build
-
-// Rebuild docs
-$ yarn run doc
 ```
 
 ### Documentation site
