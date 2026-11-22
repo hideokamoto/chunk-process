@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "0.42.6",
-    "astro": "7.4.0",
+    "astro": "7.4.7",
     "rehype-parse": "9.0.1",
     "rehype-sanitize": "6.0.0",
     "rehype-stringify": "10.0.1",
